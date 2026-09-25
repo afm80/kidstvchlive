@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تلفزيون الاطفال</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@700&display=swap');
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: 'Cairo', sans-serif;
+  background-image: url('https://c.top4top.io/p_36090k7by0.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  text-align: center;
+}
+
+header {
+  width: 100%;
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+header img {
+  max-height: 60px;
+  width: auto;
+  display: block;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 120px);
+  gap: 16px;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+.card {
+  width: 120px;
+  background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 50%, #d4d4d4 100%);
+  border-radius: 12px;
+  text-decoration: none;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.card img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.card-title {
+  font-size: 11px;
+  color: #333333;
+  margin-top: 6px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: bold;
+  width: 100%;
+}
+
+#player {
+  display: none;
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 16px;
+}
+
+#player .video-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  background: #000;
+  aspect-ratio: 16 / 9;
+}
+
+#player video,
+#player iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+
+#msg {
+  color: #fff;
+  background: rgba(0,0,0,0.7);
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-top: 10px;
+  display: none;
+}
+
+#player .player-controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin-top:10px; }
+#player .player-controls select, #player .quality-button, #player .quality-toggle { border:1px solid rgba(255,255,255,.3); border-radius:8px; background:rgba(0,0,0,.75); color:#fff; padding:8px 12px; font:inherit; cursor:pointer; }
+#player .player-switch { border:1px solid rgba(255,255,255,.3); border-radius:8px; background:rgba(0,0,0,.75); color:#fff; padding:8px 12px; font:inherit; cursor:pointer; }
+#player .player-switch:hover, #player .player-switch.active { background:#ff6600; }
+#player .retry-switch { order:-1; border:1px solid rgba(255,255,255,.3); border-radius:50%; background:rgba(0,0,0,.75); color:#fff; width:34px; height:34px; padding:0; font:inherit; font-size:20px; font-weight:900; cursor:pointer; }
+#player .retry-switch:hover { background:#ff6600; transform:rotate(90deg); }
+#player .retry-switch[hidden] { display:none; }
+#player .quality-button.active, #player .quality-button:hover, #player .quality-toggle:hover { background:#ff6600; }
+#player .quality-toggle { display:none; }
+#player .quality-menu { position:relative; display:inline-flex; }
+#player .quality-options { position:absolute; bottom:calc(100% + 6px); right:0; display:none; min-width:130px; padding:5px; border-radius:8px; background:rgba(0,0,0,.9); z-index:4; }
+#player .quality-options.open { display:grid; gap:4px; }
+#player .quality-options button { border:0; border-radius:5px; padding:7px 9px; background:transparent; color:#fff; cursor:pointer; text-align:right; }
+#player .quality-options button:hover { background:#ff6600; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <img src="https://raw.githubusercontent.com/h-80/img/refs/heads/main/kids.png" alt="شعار الواجهة">
+</header>
+
+<div id="player">
+  <div class="video-wrap" id="videoWrap">
+    <video id="videoEl" controls autoplay playsinline></video>
+  </div>
+  <div class="player-controls">
+    <button id="primaryPlayerBtn" class="player-switch active" type="button">المشغل الرئيسي</button>
+    <button id="backupPlayerBtn" class="player-switch" type="button">المشغل الاحتياطي</button>
+    <button id="retryKidsBtn" class="retry-switch" type="button" aria-label="إعادة المحاولة" title="إعادة المحاولة" hidden>↻</button>
+    <select id="engineSelect" aria-label="المشغل">
+      <option value="auto">تلقائي</option>
+      <option value="videojs">Video.js</option>
+      <option value="hlsjs">HLS.js</option>
+      <option value="dplayer">DPlayer</option>
+      <option value="clappr">Clappr</option>
+      <option value="native">المشغل الأصلي</option>
+    </select>
+    <div id="linkButtons"></div>
+    <div class="quality-menu">
+      <button id="qualityToggle" class="quality-toggle" type="button">⚙ الجودة</button>
+      <div id="qualityOptions" class="quality-options"></div>
+    </div>
+  </div>
+  <div id="msg"></div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<textarea id="data" style="display:none">
+سبيس ستون
+https://www.appcreator24.com/srv/imgs/seccs/37498762_ico.png?ts=1790091790
+https://shd-gcp-live.edgenextcdn.net/live/bitmovin-spacetoon/d8382fb9ab4b2307058f12c7ea90db54/index.m3u8
+قناة ماجد
+https://www.appcreator24.com/srv/imgs/seccs/37498769_ico.png?ts=1790091857
+https://admn-live-cdn-lb.starzplayarabia.com/out/v1/admn_tv_enc/majid/majid_hls_nd/index.m3u8
+أفران باخجة
+https://www.appcreator24.com/srv/imgs/seccs/37498774_ico.png?ts=1790091890
+https://5dcabf026b188.streamlock.net/afarinTV/livestream/playlist.m3u8
+أفران
+https://www.appcreator24.com/srv/imgs/seccs/37498781_ico.png?ts=1790091929
+https://65f16f0fdfc51.streamlock.net/afarinTV/livestream/playlist.m3u8
+اطفال ومواهب
+https://www.appcreator24.com/srv/imgs/seccs/37498783_ico.png?ts=1790091968
+https://5d658d7e9f562.streamlock.net/atfal1.com/atfal2/playlist.m3u8
+اطفال مرايا
+https://www.appcreator24.com/srv/imgs/seccs/37498795_ico.png?ts=1790091999
+https://live.kwikmotion.com/smckidslive/tjkids1.smil/playlist.m3u8
+شاهد انيمي
+https://www.appcreator24.com/srv/imgs/seccs/37498802_ico.png?ts=1790092071
+https://mbc1-enc.edgenextcdn.net/out/v1/e7350ddf46c94dddafe14b099394ff56/index.m3u8
+MBC 3
+https://www.appcreator24.com/srv/imgs/seccs/37498808_ico.png?ts=1790092101
+https://shd-gcp-live.edgenextcdn.net/live/bitmovin-mbc-3-usa/5d58265a862a476dc7f97694addb5ded/index.m3u8
+رؤيا أطفال
+https://www.appcreator24.com/srv/imgs/seccs/37498809_ico.png?ts=1790092131
+https://playlist.fasttvcdn.com/pl/ptllxjd03j6g9oxxjdfapg/roya-kids/playlist/1.m3u8
+روتانا أطفال
+https://www.appcreator24.com/srv/imgs/seccs/37498814_ico.png?ts=1790092155
+https://h1001.hibridcdn.net/rotana/kids_2X9by3GFdMqYr8zK/playlist.m3u8
+koogi
+https://www.appcreator24.com/srv/imgs/seccs/37498818_ico.png?ts=1790092181
+http://media6.smc-host.com:1935/koogi.tv/koogi.smil/playlist.m3u8
+عمو نعال
+https://www.appcreator24.com/srv/imgs/seccs/37498829_ico.png?ts=1790092242
+http://mkstream.servehttp.com:1940/AmouYazid/ay1/playlist.m3u8
+فورتين أطفال
+https://www.appcreator24.com/srv/imgs/seccs/37499176_ico.png?ts=1790092268
+http://ch14.tv/live/ch4teenkids/playlist.m3u8
+جيم للأطفال
+https://www.appcreator24.com/srv/imgs/seccs/37809305_ico.png?ts=1790092296
+https://w.shahidtv.net/live/34682514/73347194/62.m3u8
+</textarea>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+<script src="https://cdn.jsdelivr.net/npm/dashjs@4/dist/dash.all.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/shaka-player@4/dist/shaka-player.compiled.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flv.js@1/dist/flv.min.js"></script>
+<script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dplayer@latest/dist/DPlayer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/clappr@latest/dist/clappr.min.js"></script>
+<script>
+var hlsInstance = null;
+var dashInstance = null;
+var shakaPlayer = null;
+var flvPlayer = null;
+var videoEl = document.getElementById('videoEl');
+var wrapEl = document.getElementById('videoWrap');
+var gridEl = document.getElementById('grid');
+var msgEl = document.getElementById('msg');
+var retryKidsBtn = document.getElementById('retryKidsBtn');
+
+/* 🔹 عند فتح الصفحة: نضيف حالة "الواجهة" في السجل
+   حتى إذا ضغط المستخدم رجوع لا يخرج من الصفحة */
+try { history.replaceState({ view: 'grid' }, '', location.href); } catch(e){}
+
+/* ---------- بناء الكروت ---------- */
+function buildCards() {
+  var lines = document.getElementById('data').value
+    .split('\n')
+    .map(function(l) { return l.trim(); })
+    .filter(function(l) { return l.length > 0; });
+
+  gridEl.innerHTML = '';
+
+  for (var i = 0; i + 2 < lines.length; i += 3) {
+    (function(name, image, video) {
+      var a = document.createElement('a');
+      a.href = '#';
+      a.className = 'card';
+
+      var img = document.createElement('img');
+      img.src = image;
+      img.alt = name;
+
+      var title = document.createElement('div');
+      title.className = 'card-title';
+      title.textContent = name;
+
+      a.appendChild(img);
+      a.appendChild(title);
+
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (!video) return;
+
+        gridEl.style.display = 'none';
+        document.getElementById('player').style.display = 'block';
+        playVideo(video);
+
+        /* 🔹 حالة جديدة: المشغل مفتوح */
+        try { history.pushState({ view: 'player' }, '', '#play'); } catch(err) {}
+      });
+
+      gridEl.appendChild(a);
+    })(lines[i], lines[i + 1], lines[i + 2]);
+  }
+}
+
+/* ---------- رسائل ---------- */
+function showMsg(text) {
+  msgEl.textContent = text;
+  msgEl.style.display = 'block';
+  retryKidsBtn.hidden = !/^⚠/.test(text);
+}
+function hideMsg() {
+  msgEl.style.display = 'none';
+  msgEl.textContent = '';
+  retryKidsBtn.hidden = true;
+}
+
+retryKidsBtn.addEventListener('click', function() {
+  fallbackCycle = 0;
+  if (!activeUrl) return;
+  if (kidsPlayerMode === 'backup') {
+    playBackupVideo(activeUrl);
+  } else {
+    playVideo(activeUrl);
+  }
+});
+
+function showIframe(src) {
+  videoEl.style.display = 'none';
+  var iframe = document.createElement('iframe');
+  iframe.src = src;
+  iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+  iframe.allowFullscreen = true;
+  wrapEl.appendChild(iframe);
+}
+
+/* ---------- التعرف على المنصات ---------- */
+function toYouTubeEmbed(url) {
+  var m;
+  if ((m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/live\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{11})/))) {
+    return 'https://www.youtube.com/embed/' + m[1] + '?autoplay=1&rel=0';
+  }
+  return null;
+}
+function toVimeoEmbed(url) {
+  var m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if (m) return 'https://player.vimeo.com/video/' + m[1] + '?autoplay=1';
+  return null;
+}
+function toFacebookEmbed(url) {
+  return 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) + '&autoplay=1';
+}
+function toDailymotionEmbed(url) {
+  var m = url.match(/dailymotion\.com\/video\/([A-Za-z0-9]+)/);
+  if (m) return 'https://www.dailymotion.com/embed/video/' + m[1] + '?autoplay=1';
+  return null;
+}
+function toTwitchEmbed(url) {
+  var m = url.match(/twitch\.tv\/([A-Za-z0-9_]+)/);
+  if (m) return 'https://player.twitch.tv/?channel=' + m[1] + '&parent=' + location.hostname + '&autoplay=true';
+  return null;
+}
+function toStreamableEmbed(url) {
+  var m = url.match(/streamable\.com\/([A-Za-z0-9]+)/);
+  if (m) return 'https://streamable.com/e/' + m[1] + '?autoplay=1';
+  return null;
+}
+function toTwitterEmbed(url) {
+  if (/twitter\.com|x\.com/.test(url)) return 'https://twitframe.com/show?url=' + encodeURIComponent(url);
+  return null;
+}
+function toOkEmbed(url) {
+  var m = url.match(/ok\.ru\/video\/(\d+)/);
+  if (m) return 'https://ok.ru/videoembed/' + m[1] + '?autoplay=1';
+  return null;
+}
+function toVkEmbed(url) {
+  var m = url.match(/vk\.com\/video(-?\d+)_(\d+)/);
+  if (m) return 'https://vk.com/video_ext.php?oid=' + m[1] + '&id=' + m[2] + '&autoplay=1';
+  return null;
+}
+function toRumbleEmbed(url) {
+  var m = url.match(/rumble\.com\/(?:embed\/)?([A-Za-z0-9]+)/);
+  if (m) return 'https://rumble.com/embed/' + m[1] + '/';
+  return null;
+}
+function toBitchuteEmbed(url) {
+  var m = url.match(/bitchute\.com\/video\/([A-Za-z0-9]+)/);
+  if (m) return 'https://www.bitchute.com/embed/' + m[1] + '/';
+  return null;
+}
+function toOdyseeEmbed(url) {
+  var m = url.match(/odysee\.com\/.*[:/]([A-Za-z0-9]+)/);
+  if (m) return 'https://odysee.com/$/embed/' + m[1];
+  return null;
+}
+function toArchiveEmbed(url) {
+  var m = url.match(/archive\.org\/details\/([^\/\?]+)/);
+  if (m) return 'https://archive.org/embed/' + m[1];
+  return null;
+}
+function toMp4UploadEmbed(url) {
+  var m = url.match(/mp4upload\.com\/(?:embed-)?([A-Za-z0-9]+)/);
+  if (m) return 'https://www.mp4upload.com/embed-' + m[1] + '.html';
+  return null;
+}
+function toDoodEmbed(url) {
+  var m = url.match(/dood(?:stream|\.)?\.?(?:com|to|so|pm|watch|sh|re|la|ws|gs|life|yt|li|si|cf|wtf|best|cx|nu|vip)\/(?:e|d)\/([A-Za-z0-9]+)/i);
+  if (m) return 'https://dood.to/e/' + m[1];
+  return null;
+}
+function toGenericIframe(url) { return url; }
+
+/* ---------- كشف النوع ---------- */
+function isHls(url) { return /\.m3u8(\?.*)?$/i.test(url) || /format=m3u8/i.test(url); }
+function isDash(url) { return /\.mpd(\?.*)?$/i.test(url) || /format=mpd/i.test(url); }
+function isFlv(url) { return /\.flv(\?.*)?$/i.test(url); }
+function isMkv(url) { return /\.mkv(\?.*)?$/i.test(url); }
+function isTs(url) { return /\.ts(\?.*)?$/i.test(url); }
+function isDirectVideo(url) {
+  return /\.(mp4|webm|ogg|ogv|mov|m4v|3gp|m4s|mp3|aac|m4a)(\?.*)?$/i.test(url);
+}
+function isRtmp(url) { return /^rtmp:\/\//i.test(url); }
+function isRtsp(url) { return /^rtsp:\/\//i.test(url); }
+
+/* ---------- المشغل الموحد ---------- */
+var activeEngine = 'native';
+var activeUrl = '';
+var kidsPlayerMode = 'primary';
+var fallbackCycle = 0;
+var activeHls = null;
+var activeShaka = null;
+var activeVideoJs = null;
+var activeDplayer = null;
+var activeClappr = null;
+var engineTimer = null;
+var engineToken = 0;
+var qualitySources = [];
+var qualityIndex = 0;
+
+function setKidsPlayerMode(mode) {
+  kidsPlayerMode = mode;
+  var engineSelect = document.getElementById('engineSelect');
+  var qualityMenu = document.querySelector('#player .quality-menu');
+  var primaryButton = document.getElementById('primaryPlayerBtn');
+  var backupButton = document.getElementById('backupPlayerBtn');
+
+  if (engineSelect) engineSelect.style.display = mode === 'primary' ? '' : 'none';
+  if (qualityMenu) qualityMenu.style.display = mode === 'primary' ? '' : 'none';
+  if (primaryButton) primaryButton.classList.toggle('active', mode === 'primary');
+  if (backupButton) backupButton.classList.toggle('active', mode === 'backup');
+}
+
+function stopKidsMedia() {
+  document.querySelectorAll('audio, video').forEach(function(media) {
+    try { media.pause(); media.muted = true; media.volume = 0; media.removeAttribute('src'); media.load(); } catch(e){}
+  });
+  document.querySelectorAll('#videoWrap iframe').forEach(function(frame) { frame.remove(); });
+}
+
+function resetPlayers() {
+  engineToken++;
+  if (engineTimer) { clearTimeout(engineTimer); engineTimer = null; }
+  stopKidsMedia();
+  try { if (activeHls) activeHls.destroy(); } catch(e){}
+  try { if (activeShaka) activeShaka.destroy(); } catch(e){}
+  try { if (activeVideoJs) activeVideoJs.dispose(); } catch(e){}
+  try { if (activeDplayer) activeDplayer.destroy(); } catch(e){}
+  try { if (activeClappr) activeClappr.destroy(); } catch(e){}
+  activeHls = null; activeVideoJs = null; activeDplayer = null; activeClappr = null;
+  activeShaka = null;
+  wrapEl.querySelectorAll('[data-player-host]').forEach(function(host) { host.remove(); });
+  videoEl.style.display = 'block';
+  videoEl.controls = true;
+  qualitySources = [];
+  qualityIndex = 0;
+  document.getElementById('qualityToggle').style.display = 'none';
+  document.getElementById('qualityOptions').innerHTML = '';
+  document.getElementById('qualityOptions').classList.remove('open');
+  hideMsg();
+}
+
+function qualityLabel(level, index) {
+  var name = level.name || (level.attrs && level.attrs.NAME) || (level.attributes && level.attributes.NAME);
+  if (name) return String(name);
+  if (level.height) return level.height + 'p';
+  if (level.bitrate) return Math.round(level.bitrate / 1000) + 'kbps';
+  return 'جودة ' + (index + 1);
+}
+
+function showQualities(hls, token) {
+  var levels = hls.levels || [];
+  if (token !== engineToken || levels.length < 2) return;
+  qualitySources = levels.map(function(level, index) { return { label: qualityLabel(level, index), index: index }; });
+  var toggle = document.getElementById('qualityToggle');
+  var options = document.getElementById('qualityOptions');
+  toggle.style.display = 'inline-block';
+  options.innerHTML = '';
+  qualitySources.forEach(function(source, index) {
+    var button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = source.label;
+    button.onclick = function() { qualityIndex = index; hls.currentLevel = source.index; options.classList.remove('open'); };
+    options.appendChild(button);
+  });
+}
+
+function createHost(id) {
+  var host = document.createElement('div');
+  host.id = id;
+  host.dataset.playerHost = 'true';
+  host.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:#000;';
+  wrapEl.appendChild(host);
+  return host;
+}
+
+function playWithEngine(url, engine, token, failed) {
+  activeEngine = engine;
+  videoEl.style.display = engine === 'native' || engine === 'videojs' || engine === 'hlsjs' ? 'block' : 'none';
+  try {
+    if (engine === 'videojs' && window.videojs) {
+      activeVideoJs = videojs(videoEl, { autoplay:true, controls:true, responsive:true, fluid:false });
+      activeVideoJs.src({src:url, type:'application/x-mpegURL'});
+      activeVideoJs.on('playing', function(){ if (token === engineToken) finishKidsEngine(token); });
+      activeVideoJs.on('error', function(){ if (token === engineToken) failed(); });
+      activeVideoJs.play().catch(function(){});
+      return;
+    }
+    if (engine === 'hlsjs' && window.Hls && Hls.isSupported()) {
+      activeHls = new Hls();
+      activeHls.loadSource(url);
+      activeHls.attachMedia(videoEl);
+      activeHls.on(Hls.Events.MANIFEST_PARSED, function(){ showQualities(activeHls, token); videoEl.play().catch(function(){}); });
+      activeHls.on(Hls.Events.FRAG_LOADED, function(){ if (token === engineToken) finishKidsEngine(token); });
+      activeHls.on(Hls.Events.ERROR, function(event, data){ if (data && data.fatal && token === engineToken) failed(); });
+      return;
+    }
+    if (engine === 'shaka' && window.shaka && shaka.Player.isBrowserSupported()) {
+      activeShaka = new shaka.Player(videoEl);
+      activeShaka.load(url).then(function() {
+        videoEl.play().then(function() {
+          if (token === engineToken) finishKidsEngine(token);
+        }).catch(function() {
+          if (token === engineToken) failed();
+        });
+      }).catch(function() {
+        if (token === engineToken) failed();
+      });
+      return;
+    }
+    if (engine === 'dplayer' && window.DPlayer) {
+      var dHost = createHost('dplayer-host');
+      activeDplayer = new DPlayer({container:dHost, autoplay:true, video:{url:url, type:'hls'}});
+      activeDplayer.on('playing', function(){ if (token === engineToken) finishKidsEngine(token); });
+      activeDplayer.on('error', function(){ if (token === engineToken) failed(); });
+      return;
+    }
+    if (engine === 'clappr' && window.Clappr) {
+      var cHost = createHost('clappr-host');
+      activeClappr = new Clappr.Player({source:url, parentId:'#' + cHost.id, autoPlay:true, mute:false});
+      activeClappr.on(Clappr.Events.PLAYER_READY, function(){ if (token === engineToken) finishKidsEngine(token); });
+      activeClappr.on(Clappr.Events.PLAYER_ERROR, function(){ if (token === engineToken) failed(); });
+      return;
+    }
+    if (engine === 'native') {
+      videoEl.src = url;
+      videoEl.onplaying = function(){ if (token === engineToken) finishKidsEngine(token); };
+      videoEl.onerror = function(){ if (token === engineToken) failed(); };
+      videoEl.play().catch(function(){});
+      return;
+    }
+  } catch(e) { failed(); }
+  failed();
+}
+
+function finishKidsEngine(token) {
+  if (token !== engineToken) return;
+  if (engineTimer) { clearTimeout(engineTimer); engineTimer = null; }
+}
+
+function playVideo(url, automatic) {
+  resetPlayers();
+  activeUrl = url;
+  if (!automatic) fallbackCycle = 0;
+  setKidsPlayerMode('primary');
+  hideMsg();
+  var token = engineToken;
+  var selected = document.getElementById('engineSelect').value;
+  var engines = selected === 'auto' ? ['hlsjs','native','shaka'] : [selected,'hlsjs','native','shaka'];
+  var index = 0;
+  function next() {
+    if (token !== engineToken) return;
+    if (index >= engines.length) {
+      if (fallbackCycle === 0) {
+        fallbackCycle = 1;
+        showMsg('⚠ تعذر التشغيل، جاري الانتقال للمشغل الاحتياطي...');
+        setTimeout(function() {
+          if (token === engineToken && activeUrl === url) playBackupVideo(url);
+        }, 500);
+      } else {
+        showMsg('⚠ تعذر تشغيل رابط البث بالمشغلين المتاحين.');
+      }
+      return;
+    }
+    var engine = engines[index++];
+    resetPlayersForEngine();
+    playWithEngine(url, engine, token, next);
+    engineTimer = setTimeout(function(){ if (token === engineToken) next(); }, 6000);
+  }
+  next();
+}
+
+function playBackupVideo(url) {
+  resetPlayers();
+  activeUrl = url;
+  setKidsPlayerMode('backup');
+  hideMsg();
+
+  if (!window.shaka || !shaka.Player.isBrowserSupported()) {
+    showMsg('⚠ المشغل الاحتياطي غير مدعوم في هذا المتصفح.');
+    return;
+  }
+
+  try {
+    activeShaka = new shaka.Player(videoEl);
+    activeShaka.load(url).then(function() {
+      videoEl.play().catch(function(){});
+    }).catch(function() {
+      showMsg('⚠ فشل المشغل الاحتياطي، جاري الرجوع للمشغل الرئيسي...');
+      setTimeout(function() {
+        if (activeUrl === url && kidsPlayerMode === 'backup') playVideo(url, true);
+      }, 1000);
+    });
+  } catch(e) {
+    showMsg('⚠ تعذر تشغيل المشغل الاحتياطي.');
+  }
+}
+
+function resetPlayersForEngine() {
+  if (engineTimer) { clearTimeout(engineTimer); engineTimer = null; }
+  try { if (activeHls) activeHls.destroy(); } catch(e){}
+  try { if (activeShaka) activeShaka.destroy(); } catch(e){}
+  try { if (activeVideoJs) activeVideoJs.dispose(); } catch(e){}
+  try { if (activeDplayer) activeDplayer.destroy(); } catch(e){}
+  try { if (activeClappr) activeClappr.destroy(); } catch(e){}
+  activeHls = null; activeShaka = null; activeVideoJs = null; activeDplayer = null; activeClappr = null;
+  wrapEl.querySelectorAll('[data-player-host]').forEach(function(host){ host.remove(); });
+  videoEl.pause(); videoEl.removeAttribute('src'); videoEl.load(); videoEl.style.display = 'block';
+  ensureKidsVideo();
+}
+
+function ensureKidsVideo() {
+  if (wrapEl.contains(videoEl)) return;
+  videoEl = document.createElement('video');
+  videoEl.id = 'videoEl';
+  videoEl.controls = true;
+  videoEl.autoplay = true;
+  videoEl.playsInline = true;
+  wrapEl.insertBefore(videoEl, wrapEl.firstChild);
+}
+
+function closePlayer() {
+  resetPlayers();
+  activeUrl = '';
+  document.getElementById('player').style.display = 'none';
+  gridEl.style.display = 'grid';
+  document.getElementById('engineSelect').value = 'auto';
+}
+
+document.getElementById('qualityToggle').onclick = function(event) {
+  event.stopPropagation();
+  document.getElementById('qualityOptions').classList.toggle('open');
+};
+document.getElementById('engineSelect').onchange = function() { if (activeUrl) playVideo(activeUrl); };
+document.getElementById('primaryPlayerBtn').onclick = function() {
+  setKidsPlayerMode('primary');
+  if (activeUrl) playVideo(activeUrl);
+};
+document.getElementById('backupPlayerBtn').onclick = function() {
+  setKidsPlayerMode('backup');
+  if (activeUrl) playBackupVideo(activeUrl);
+};
+document.addEventListener('click', function(event) { if (!event.target.closest('.quality-menu')) document.getElementById('qualityOptions').classList.remove('open'); });
+
+/* ---------- دعم زر الرجوع والخروج ---------- */
+window.addEventListener('popstate', function() {
+  if (document.getElementById('player').style.display === 'block') closePlayer();
+});
+
+window.addEventListener('pagehide', function() { resetPlayers(); });
+window.addEventListener('beforeunload', function() { resetPlayers(); });
+document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') resetPlayers(); });
+
+buildCards();
+</script>
+
+</body>
+</html>
